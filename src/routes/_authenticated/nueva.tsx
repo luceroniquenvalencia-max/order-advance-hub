@@ -22,7 +22,7 @@ function Nueva() {
   const qc = useQueryClient();
   const [pedido, setPedido] = useState("");
   const [fecha, setFecha] = useState("");
-  const [motivo, setMotivo] = useState(MOTIVOS[0]);
+  const [motivo, setMotivo] = useState<string>(MOTIVOS[0]!);
   const [obs, setObs] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +39,7 @@ function Nueva() {
       .select("id, codigo")
       .single();
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`Solicitud ${data.codigo} registrada`);
     qc.invalidateQueries({ queryKey: ["solicitudes"] });
     navigate({ to: "/solicitudes/$id", params: { id: data.id } });
