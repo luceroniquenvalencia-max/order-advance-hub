@@ -137,7 +137,7 @@ function AtencionForm({ s, adminEmail, onSaved }: { s: Solicitud; adminEmail: st
       observacion_final: obsFinal.trim() || null,
     }).eq("id", s.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Solicitud actualizada");
     onSaved();
   }
