@@ -14,16 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nombre?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      solicitud_historial: {
+        Row: {
+          accion: string
+          created_at: string
+          detalle: string | null
+          estado_anterior:
+            | Database["public"]["Enums"]["estado_solicitud"]
+            | null
+          estado_nuevo: Database["public"]["Enums"]["estado_solicitud"] | null
+          id: string
+          solicitud_id: string
+          usuario_email: string | null
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          detalle?: string | null
+          estado_anterior?:
+            | Database["public"]["Enums"]["estado_solicitud"]
+            | null
+          estado_nuevo?: Database["public"]["Enums"]["estado_solicitud"] | null
+          id?: string
+          solicitud_id: string
+          usuario_email?: string | null
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          detalle?: string | null
+          estado_anterior?:
+            | Database["public"]["Enums"]["estado_solicitud"]
+            | null
+          estado_nuevo?: Database["public"]["Enums"]["estado_solicitud"] | null
+          id?: string
+          solicitud_id?: string
+          usuario_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_historial_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitudes: {
+        Row: {
+          asesor_email: string
+          asesor_id: string
+          asesor_nombre: string
+          atendido_por: string | null
+          codigo: string
+          comentario_atencion: string | null
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_solicitud"]
+          fecha_atencion: string | null
+          fecha_programada: string | null
+          fecha_solicitada: string
+          id: string
+          motivo: string
+          numero_pedido: string
+          observacion_asesor: string | null
+          observacion_final: string | null
+          sheet_synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          asesor_email: string
+          asesor_id?: string
+          asesor_nombre: string
+          atendido_por?: string | null
+          codigo?: string
+          comentario_atencion?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_solicitud"]
+          fecha_atencion?: string | null
+          fecha_programada?: string | null
+          fecha_solicitada: string
+          id?: string
+          motivo: string
+          numero_pedido: string
+          observacion_asesor?: string | null
+          observacion_final?: string | null
+          sheet_synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asesor_email?: string
+          asesor_id?: string
+          asesor_nombre?: string
+          atendido_por?: string | null
+          codigo?: string
+          comentario_atencion?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_solicitud"]
+          fecha_atencion?: string | null
+          fecha_programada?: string | null
+          fecha_solicitada?: string
+          id?: string
+          motivo?: string
+          numero_pedido?: string
+          observacion_asesor?: string | null
+          observacion_final?: string | null
+          sheet_synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "asesor"
+      estado_solicitud:
+        | "PENDIENTE"
+        | "EN_VALIDACION"
+        | "ATENDIDO"
+        | "NO_ATENDIDO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +309,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "asesor"],
+      estado_solicitud: [
+        "PENDIENTE",
+        "EN_VALIDACION",
+        "ATENDIDO",
+        "NO_ATENDIDO",
+      ],
+    },
   },
 } as const
