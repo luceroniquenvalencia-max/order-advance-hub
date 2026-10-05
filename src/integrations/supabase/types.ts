@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      pedidos_dia: {
+        Row: {
+          archivo: string | null
+          asesor: string
+          cantidad: number
+          cliente: string
+          distrito: string
+          fecha_despacho: string
+          id: string
+          orden: number
+          pedido: string
+          sku: string
+          subido_at: string
+          subido_por: string | null
+          valorizado: number | null
+          volumen: number | null
+        }
+        Insert: {
+          archivo?: string | null
+          asesor?: string
+          cantidad?: number
+          cliente?: string
+          distrito?: string
+          fecha_despacho?: string
+          id?: string
+          orden?: number
+          pedido: string
+          sku?: string
+          subido_at?: string
+          subido_por?: string | null
+          valorizado?: number | null
+          volumen?: number | null
+        }
+        Update: {
+          archivo?: string | null
+          asesor?: string
+          cantidad?: number
+          cliente?: string
+          distrito?: string
+          fecha_despacho?: string
+          id?: string
+          orden?: number
+          pedido?: string
+          sku?: string
+          subido_at?: string
+          subido_por?: string | null
+          valorizado?: number | null
+          volumen?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -174,6 +225,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reemplazar_pedidos_dia: {
+        Args: { _archivo: string; _filas: Json }
+        Returns: number
       }
     }
     Enums: {
