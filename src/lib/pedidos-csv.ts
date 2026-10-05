@@ -5,8 +5,8 @@ export const norm = (s: unknown) =>
   String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
 
 export function parseCSV(text: string): string[][] {
-  const first = text.split(/\r?\n/, 1)[0];
-  const d = ([";", "\t", ","] as const).map((c) => [c, first.split(c).length] as const).sort((a, b) => b[1] - a[1])[0][0];
+  const first = text.split(/\r?\n/, 1)[0] ?? "";
+  const d = ([";", "\t", ","] as const).map((c) => [c, first.split(c).length] as const).sort((a, b) => b[1] - a[1])[0]![0];
   const rows: string[][] = [];
   let row: string[] = [], f = "", q = false;
   for (let i = 0; i < text.length; i++) {

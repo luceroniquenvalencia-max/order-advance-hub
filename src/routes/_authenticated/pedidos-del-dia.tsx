@@ -28,8 +28,8 @@ async function loadReporte(): Promise<Data | null> {
   if (error) throw error;
   if (!data?.length) return null;
   return {
-    fecha: data[0].fecha_despacho,
-    subido: data[0].subido_at,
+    fecha: data[0]!.fecha_despacho,
+    subido: data[0]!.subido_at,
     filas: data.map((r) => ({
       p: r.pedido, c: r.cliente, d: r.distrito, s: r.sku, a: r.asesor,
       q: Number(r.cantidad), v: r.valorizado == null ? null : Number(r.valorizado), m: r.volumen == null ? null : Number(r.volumen),
