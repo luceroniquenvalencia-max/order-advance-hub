@@ -11,9 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedNuevaRouteImport } from './routes/_authenticated/nueva'
-import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
-import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedPedidosDelDiaRouteImport } from './routes/_authenticated/pedidos-del-dia'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,55 +22,33 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedNuevaRoute = AuthenticatedNuevaRouteImport.update({
-  id: '/nueva',
-  path: '/nueva',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPanelRoute = AuthenticatedPanelRouteImport.update({
-  id: '/panel',
-  path: '/panel',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSolicitudesIdRoute =
-  AuthenticatedSolicitudesIdRouteImport.update({
-    id: '/solicitudes/$id',
-    path: '/solicitudes/$id',
+const AuthenticatedPedidosDelDiaRoute =
+  AuthenticatedPedidosDelDiaRouteImport.update({
+    id: '/pedidos-del-dia',
+    path: '/pedidos-del-dia',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/nueva': typeof AuthenticatedNuevaRoute
-  '/panel': typeof AuthenticatedPanelRoute
-  '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
+  '/pedidos-del-dia': typeof AuthenticatedPedidosDelDiaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/nueva': typeof AuthenticatedNuevaRoute
-  '/panel': typeof AuthenticatedPanelRoute
-  '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
+  '/pedidos-del-dia': typeof AuthenticatedPedidosDelDiaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/_authenticated/nueva': typeof AuthenticatedNuevaRoute
-  '/_authenticated/panel': typeof AuthenticatedPanelRoute
-  '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
+  '/_authenticated/pedidos-del-dia': typeof AuthenticatedPedidosDelDiaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/nueva' | '/panel' | '/solicitudes/$id'
+  fullPaths: '/' | '/pedidos-del-dia'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/nueva' | '/panel' | '/solicitudes/$id'
-  id:
-    | '__root__'
-    | '/'
-    | '/_authenticated'
-    | '/_authenticated/nueva'
-    | '/_authenticated/panel'
-    | '/_authenticated/solicitudes/$id'
+  to: '/' | '/pedidos-del-dia'
+  id: '__root__' | '/' | '/_authenticated' | '/_authenticated/pedidos-del-dia'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,40 +72,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/nueva': {
-      id: '/_authenticated/nueva'
-      path: '/nueva'
-      fullPath: '/nueva'
-      preLoaderRoute: typeof AuthenticatedNuevaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/panel': {
-      id: '/_authenticated/panel'
-      path: '/panel'
-      fullPath: '/panel'
-      preLoaderRoute: typeof AuthenticatedPanelRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/solicitudes/$id': {
-      id: '/_authenticated/solicitudes/$id'
-      path: '/solicitudes/$id'
-      fullPath: '/solicitudes/$id'
-      preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
+    '/_authenticated/pedidos-del-dia': {
+      id: '/_authenticated/pedidos-del-dia'
+      path: '/pedidos-del-dia'
+      fullPath: '/pedidos-del-dia'
+      preLoaderRoute: typeof AuthenticatedPedidosDelDiaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedNuevaRoute: typeof AuthenticatedNuevaRoute
-  AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
-  AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
+  AuthenticatedPedidosDelDiaRoute: typeof AuthenticatedPedidosDelDiaRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedNuevaRoute: AuthenticatedNuevaRoute,
-  AuthenticatedPanelRoute: AuthenticatedPanelRoute,
-  AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
+  AuthenticatedPedidosDelDiaRoute: AuthenticatedPedidosDelDiaRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

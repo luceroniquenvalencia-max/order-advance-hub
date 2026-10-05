@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Adelantos de Envío — Acceso" },
-      { name: "description", content: "Gestión interna de solicitudes de adelanto de envío de pedidos para asesores." },
-      { property: "og:title", content: "Adelantos de Envío — Acceso" },
-      { property: "og:description", content: "Registra y sigue solicitudes de adelanto de envío en tiempo real." },
+      { title: "Pedidos del día — Acceso" },
+      { name: "description", content: "Acceso al reporte diario de pedidos programados." },
+      { property: "og:title", content: "Pedidos del día — Acceso" },
+      { property: "og:description", content: "Consulta los pedidos programados del día." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -29,7 +31,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/panel" });
+      if (data.session) navigate({ to: "/pedidos-del-dia" });
     });
   }, [navigate]);
 
@@ -40,14 +42,14 @@ function AuthPage() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/panel" });
+        navigate({ to: "/pedidos-del-dia" });
       } else {
         const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: window.location.origin, data: { nombre } },
         });
         if (error) throw error;
-        if (data.session) navigate({ to: "/panel" });
+        if (data.session) navigate({ to: "/pedidos-del-dia" });
         else {
           toast.success("Revisa tu correo para confirmar tu cuenta.");
           setMode("login");
@@ -66,20 +68,15 @@ function AuthPage() {
         <div className="bg-grid absolute inset-0 opacity-40" />
         <div className="relative flex items-center gap-2 font-display text-lg font-bold">
           <span className="grid size-9 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"><Truck className="size-5" /></span>
-          Adelantos de Envío
+          Pedidos programados
         </div>
         <div className="relative">
           <h1 className="font-display text-5xl font-extrabold leading-tight">
             Cada pedido,<br /><span className="text-sidebar-primary">a tiempo.</span>
           </h1>
           <p className="mt-4 max-w-md text-sidebar-foreground/70">
-            Registra solicitudes de adelanto, sigue su estado en tiempo real y deja atrás los formularios y las capturas.
+            Consulta los pedidos programados del día, su valorizado y volumen, sin capturas de pantalla.
           </p>
-        </div>
-        <div className="relative grid grid-cols-4 gap-2 text-xs">
-          {["Pendiente", "En validación", "Atendido", "No atendido"].map((s, i) => (
-            <div key={s} className="border-t-2 border-sidebar-primary pt-2" style={{ opacity: 1 - i * 0.2 }}>{s}</div>
-          ))}
         </div>
       </aside>
       <main className="flex items-center justify-center p-6">

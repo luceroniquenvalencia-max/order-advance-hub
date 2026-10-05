@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, PlusCircle, LogOut, Truck, ShieldCheck } from "lucide-react";
+import { ClipboardList, LogOut, Truck, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/useAuth";
 
@@ -34,20 +34,17 @@ function Shell() {
       <aside className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-sidebar px-4 py-3 text-sidebar-foreground md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:p-4">
         <div className="flex items-center gap-2 font-display font-bold md:mb-6">
           <span className="grid size-8 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"><Truck className="size-4" /></span>
-          <span className="hidden sm:inline">Adelantos</span>
+          <span className="hidden sm:inline">Pedidos</span>
         </div>
         <nav className="flex gap-1 md:flex-col">
-          <Link to="/panel" className={linkCls} activeProps={active}><LayoutDashboard className="size-4" /><span className="hidden sm:inline">Panel</span></Link>
-          {me && !me.isAdmin && (
-            <Link to="/nueva" className={linkCls} activeProps={active}><PlusCircle className="size-4" /><span className="hidden sm:inline">Nueva solicitud</span></Link>
-          )}
+          <Link to="/pedidos-del-dia" className={linkCls} activeProps={active}><ClipboardList className="size-4" /><span className="hidden sm:inline">Pedidos del día</span></Link>
         </nav>
         <div className="flex items-center gap-2 md:mt-auto md:flex-col md:items-stretch md:border-t md:border-sidebar-border md:pt-4">
           {me && (
             <div className="hidden text-xs md:block">
               <div className="flex items-center gap-1 font-semibold">
                 {me.isAdmin && <ShieldCheck className="size-3 text-sidebar-primary" />}
-                {me.isAdmin ? "Administrador" : "Asesor"}
+                {me.isAdmin ? "Administrador" : "Usuario"}
               </div>
               <div className="truncate text-sidebar-foreground/60">{me.email}</div>
             </div>
