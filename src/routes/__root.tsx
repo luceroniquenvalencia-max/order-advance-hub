@@ -79,8 +79,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Adelantos de Envío" },
-      { name: "description", content: "Gestión interna de solicitudes de adelanto de envío de pedidos." },
+      { title: "Pedidos programados del día" },
+      { name: "description", content: "Reporte diario de pedidos programados." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
