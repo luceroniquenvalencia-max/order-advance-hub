@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getPedidosSheet } from "@/server/pedidos-sheet.functions";
 import { useMe } from "@/hooks/useAuth";
-import { group, norm, type Fila } from "@/lib/pedidos-csv";
-import { fromXLSX, ASESORES } from "@/lib/pedidos-xlsx";
+import { group, norm } from "@/lib/pedidos-csv";
+import { ASESORES } from "@/lib/pedidos-xlsx";
 import { ubicar } from "@/lib/distritos";
 import { MapaDistritos } from "@/components/MapaDistritos";
 import { cn } from "@/lib/utils";
@@ -24,26 +25,11 @@ export const Route = createFileRoute("/_authenticated/pedidos-del-dia")({
 const f0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 const f2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type Data = { fecha: string; subido: string | null; filas: Fila[] };
-
-async function loadReporte(): Promise<Data | null> {
-  const { data, error } = await supabase.from("pedidos_dia").select("*").order("orden").limit(20000);
-  if (error) throw error;
-  if (!data?.length) return null;
-  return {
-    fecha: data[0]!.fecha_despacho,
-    subido: data[0]!.subido_at,
-    filas: data.map((r) => ({
-      p: r.pedido, c: r.cliente, d: r.distrito, s: r.sku, a: r.asesor,
-      q: Number(r.cantidad), v: r.valorizado == null ? null : Number(r.valorizado), m: r.volumen == null ? null : Number(r.volumen),
-    })),
-  };
-}
-
 function Page() {
   const { data: me } = useMe();
   const qc = useQueryClient();
-  const { data, isLoading, error } = useQuery({ queryKey: ["pedidos_dia"], queryFn: loadReporte });
+  const fetchSheet = useServerFn(getPedidosSheet);
+  const { data, isLoading, error, isFetching, refetch } = useQuery({ queryKey: ["pedidos_sheet"], queryFn: () => fetchSheet(), staleTime: 5 * 60_000 });
   const [fd, setFd] = useState("");
   const [fa, setFa] = useState("");
   const [q, setQ] = useState("");
@@ -70,27 +56,10 @@ function Page() {
     return { rows, val, vol, sinVal, lineas };
   }, [all, fa, fd, q]);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
-    setBusy(true);
-    try {
-      const d = fromXLSX(await f.arrayBuffer());
-      const filas = d.filas.map((l) => ({ ...l, fecha: d.fecha }));
-      const { error } = await supabase.rpc("reemplazar_pedidos_dia", { _filas: filas, _archivo: f.name });
-      if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["pedidos_dia"] });
-      setMsg({ t: "Reporte publicado: los asesores ya lo ven." });
-    } catch (err) {
-      setMsg({ t: err instanceof Error ? err.message : "No pude leer el archivo.", err: true });
-    } finally { setBusy(false); }
-  }
-
   let sub = "Sin reporte cargado";
   if (data) {
     sub = "Reporte cargado";
-    if (data.subido) sub = "Actualizado " + new Date(data.subido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    sub = "Despacho " + (data.fecha || "—") + " · leído " + new Date(data.leido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   }
 
   const sel = "rounded-md border bg-background px-3 py-2 text-sm min-w-[150px]";
@@ -101,14 +70,9 @@ function Page() {
           <h1 className="font-display text-3xl font-bold leading-tight">Pedidos programados</h1>
           <div className="mt-1 text-muted-foreground">{sub}</div>
         </div>
-        {me?.isAdmin && (
-          <div>
-            <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden onChange={onFile} />
-            <button disabled={busy} onClick={() => fileRef.current?.click()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-              {busy ? "Cargando…" : "Cargar reporte del día"}
-            </button>
-          </div>
-        )}
+        <button disabled={isFetching} onClick={() => refetch()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+          {isFetching ? "Actualizando…" : "Actualizar desde la hoja"}
+        </button>
       </header>
 
       <section aria-label="Resumen" className="grid grid-cols-3 overflow-hidden rounded-lg bg-primary text-primary-foreground">
@@ -169,9 +133,9 @@ function Page() {
             {isLoading ? (
               <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Cargando…</td></tr>
             ) : error ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-destructive">No pude leer el reporte compartido.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-destructive">{error instanceof Error ? error.message : "No pude leer la hoja."}</td></tr>
             ) : !data ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Aún no hay un reporte cargado. Vuelve a revisar en unos minutos.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">La hoja no tiene pedidos.</td></tr>
             ) : !view.rows.length ? (
               <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Ningún pedido coincide con los filtros.</td></tr>
             ) : view.rows.flatMap(({ g, gv, miss, gq }) => {
