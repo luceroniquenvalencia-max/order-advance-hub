@@ -37,7 +37,10 @@ export function fromRows(rows: unknown[][]): { fecha: string; filas: Fila[] } {
   if (hi < 0) throw new Error('No encuentro la columna "Codigo de Seguimiento" en las primeras 10 filas.');
   const h = rows[hi]!.map(norm);
   const ix = (n: string) => h.indexOf(norm(n));
-  const c = { p: ix("Codigo de Seguimiento"), k: ix("SKU"), s: ix("DESCRIPCION SKU"), q: ix("PIEZAS"), v: ix("VALORIZADO"), cl: ix("NOMBRE CONSIGNATARIO"), m: ix("VOLUMEN"), d: ix("DISTRITO"), f: ix("FECHA"), a: h.findIndex((x) => x.includes("ASESOR") || x.includes("VENDEDOR")) };
+  const ia =
+  ["E-MAIL", "EMAIL", "E MAIL", "CORREO"].map(ix).find((i) => i >= 0) ??
+  h.findIndex((x) => x.includes("ASESOR") || x.includes("VENDEDOR"));
+  const c = { p: ix("Codigo de Seguimiento"), k: ix("SKU"), s: ix("DESCRIPCION SKU"), q: ix("PIEZAS"), v: ix("VALORIZADO"), cl: ix("NOMBRE CONSIGNATARIO"), m: ix("VOLUMEN"), d: ix("DISTRITO"), f: ix("FECHA"), a: ia };
   const miss = ([["q", "PIEZAS"], ["v", "VALORIZADO"], ["m", "VOLUMEN"], ["d", "DISTRITO"]] as const).filter((x) => c[x[0]] < 0).map((x) => x[1]);
   if (miss.length) throw new Error("No encuentro estas columnas: " + miss.join(", "));
   const g = (r: unknown[], i: number) => (i < 0 ? "" : String(r[i] ?? "").trim());
@@ -47,6 +50,9 @@ export function fromRows(rows: unknown[][]): { fecha: string; filas: Fila[] } {
     const p = g(r, c.p).replace(/\.0+$/, "");
     if (!p) continue;
     if (!fecha) fecha = g(r, c.f);
+    const asesorPedido = new Map<string, string>();
+for (const f of filas) if (f.a && !asesorPedido.has(f.p)) asesorPedido.set(f.p, f.a);
+for (const f of filas) if (!f.a) f.a = asesorPedido.get(f.p) ?? "";
     const q = num(r[c.q]) ?? 0;
     const vu = num(r[c.v]), mu = num(r[c.m]);
     const sku = g(r, c.k), desc = g(r, c.s);
