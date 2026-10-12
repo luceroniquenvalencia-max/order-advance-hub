@@ -8,8 +8,8 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_sheets/v4";
 export const getPedidosSheet = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const lk = process.env.LOVABLE_API_KEY;
-    const ck = process.env.GOOGLE_SHEETS_API_KEY;
+    const lk = process.env['LOVABLE_API_KEY'];
+    const ck = process.env['GOOGLE_SHEETS_API_KEY'];
     if (!lk || !ck) throw new Error("La conexión con Google Sheets no está configurada.");
     const res = await fetch(`${GATEWAY_URL}/spreadsheets/${SHEET_ID}/values/'PEDIDOS PROGRAMADOS'!A1:BZ?valueRenderOption=UNFORMATTED_VALUE`, {
       headers: { Authorization: `Bearer ${lk}`, "X-Connection-Api-Key": ck },
