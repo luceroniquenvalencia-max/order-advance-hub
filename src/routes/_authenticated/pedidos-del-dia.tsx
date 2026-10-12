@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/useAuth";
 import { group, norm, type Fila } from "@/lib/pedidos-csv";
-import { fromXLSX } from "@/lib/pedidos-xlsx";
+import { fromXLSX, ASESORES } from "@/lib/pedidos-xlsx";
 import { ubicar } from "@/lib/distritos";
 import { MapaDistritos } from "@/components/MapaDistritos";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,7 @@ function Page() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({ queryKey: ["pedidos_dia"], queryFn: loadReporte });
   const [fd, setFd] = useState("");
+  const [fa, setFa] = useState("");
   const [q, setQ] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
@@ -58,7 +59,7 @@ function Page() {
 
   const view = useMemo(() => {
     const nq = norm(q);
-    const gs = all.filter((g) => (!fd || g.d === fd) && (!nq || norm(g.p + " " + g.c).includes(nq)));
+    const gs = all.filter((g) => (!fa || g.a === fa) && (!fd || g.d === fd) && (!nq || norm(g.p + " " + g.c).includes(nq)));
     let val = 0, vol = 0, sinVal = 0, lineas = 0;
     const rows = gs.map((g) => {
       let gv = 0, miss = 0, gq = 0;
@@ -67,7 +68,7 @@ function Page() {
       return { g, gv, miss, gq };
     });
     return { rows, val, vol, sinVal, lineas };
-  }, [all, fd, q]);
+  }, [all, fa, fd, q]);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -134,6 +135,15 @@ function Page() {
           )}
         </section>
       )}
+
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filtrar por asesor">
+        {["", ...Object.values(ASESORES)].map((a) => (
+          <button key={a || "todos"} onClick={() => setFa(a)} aria-pressed={fa === a}
+            className={cn("rounded-full border px-3 py-1.5 text-sm font-medium", fa === a ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-accent")}>
+            {a || "Todos"}
+          </button>
+        ))}
+      </div>
 
       <div className="mb-2.5 mt-4 flex flex-wrap gap-2">
         <select aria-label="Distrito" className={sel} value={fd} onChange={(e) => setFd(e.target.value)}>
