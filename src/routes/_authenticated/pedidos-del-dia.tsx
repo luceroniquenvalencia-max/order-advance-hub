@@ -3,7 +3,10 @@ import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/useAuth";
-import { fromCSV, group, norm, type Fila } from "@/lib/pedidos-csv";
+import { group, norm, type Fila } from "@/lib/pedidos-csv";
+import { fromXLSX } from "@/lib/pedidos-xlsx";
+import { ubicar } from "@/lib/distritos";
+import { MapaDistritos } from "@/components/MapaDistritos";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/pedidos-del-dia")({
@@ -41,7 +44,6 @@ function Page() {
   const { data: me } = useMe();
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({ queryKey: ["pedidos_dia"], queryFn: loadReporte });
-  const [fa, setFa] = useState("");
   const [fd, setFd] = useState("");
   const [q, setQ] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -50,12 +52,13 @@ function Page() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const all = useMemo(() => (data ? group(data.filas) : []), [data]);
-  const asesores = useMemo(() => [...new Set(all.map((g) => g.a).filter(Boolean))].sort(), [all]);
+  const conteo = useMemo(() => { const m = new Map<string, number>(); for (const g of all) if (g.d) m.set(g.d, (m.get(g.d) ?? 0) + 1); return [...m].map(([d, n]) => ({ d, n })); }, [all]);
+  const sinUbicar = useMemo(() => conteo.filter((x) => !ubicar(x.d)), [conteo]);
   const distritos = useMemo(() => [...new Set(all.map((g) => g.d).filter(Boolean))].sort(), [all]);
 
   const view = useMemo(() => {
     const nq = norm(q);
-    const gs = all.filter((g) => (!fa || (fa === "__none" ? !g.a : g.a === fa)) && (!fd || g.d === fd) && (!nq || norm(g.p + " " + g.c).includes(nq)));
+    const gs = all.filter((g) => (!fd || g.d === fd) && (!nq || norm(g.p + " " + g.c).includes(nq)));
     let val = 0, vol = 0, sinVal = 0, lineas = 0;
     const rows = gs.map((g) => {
       let gv = 0, miss = 0, gq = 0;
@@ -64,7 +67,7 @@ function Page() {
       return { g, gv, miss, gq };
     });
     return { rows, val, vol, sinVal, lineas };
-  }, [all, fa, fd, q]);
+  }, [all, fd, q]);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -72,7 +75,7 @@ function Page() {
     if (!f) return;
     setBusy(true);
     try {
-      const d = fromCSV(await f.arrayBuffer());
+      const d = fromXLSX(await f.arrayBuffer());
       const filas = d.filas.map((l) => ({ ...l, fecha: d.fecha }));
       const { error } = await supabase.rpc("reemplazar_pedidos_dia", { _filas: filas, _archivo: f.name });
       if (error) throw error;
@@ -85,8 +88,8 @@ function Page() {
 
   let sub = "Sin reporte cargado";
   if (data) {
-    sub = "Despacho " + (data.fecha || "—");
-    if (data.subido) sub += " · actualizado " + new Date(data.subido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    sub = "Reporte cargado";
+    if (data.subido) sub = "Actualizado " + new Date(data.subido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   }
 
   const sel = "rounded-md border bg-background px-3 py-2 text-sm min-w-[150px]";
@@ -99,7 +102,7 @@ function Page() {
         </div>
         {me?.isAdmin && (
           <div>
-            <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={onFile} />
+            <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden onChange={onFile} />
             <button disabled={busy} onClick={() => fileRef.current?.click()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
               {busy ? "Cargando…" : "Cargar reporte del día"}
             </button>
@@ -121,12 +124,18 @@ function Page() {
         </p>
       )}
 
+      {data && (
+        <section aria-label="Mapa de distritos" className="mt-4">
+          <MapaDistritos conteo={conteo} activo={fd} onSelect={setFd} />
+          {sinUbicar.length > 0 && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sin ubicar: {sinUbicar.map((x) => `${x.d} (${x.n})`).join(", ")}
+            </p>
+          )}
+        </section>
+      )}
+
       <div className="mb-2.5 mt-4 flex flex-wrap gap-2">
-        <select aria-label="Asesor" className={sel} value={fa} onChange={(e) => setFa(e.target.value)}>
-          <option value="">Todos los asesores</option>
-          <option value="__none">Sin asesor</option>
-          {asesores.map((a) => <option key={a}>{a}</option>)}
-        </select>
         <select aria-label="Distrito" className={sel} value={fd} onChange={(e) => setFd(e.target.value)}>
           <option value="">Todos los distritos</option>
           {distritos.map((d) => <option key={d}>{d}</option>)}
@@ -141,20 +150,20 @@ function Page() {
         <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="bg-primary text-left text-primary-foreground">
-              {["Pedido / SKU", "Cliente", "Distrito", "Asesor"].map((h) => <th key={h} className="whitespace-nowrap px-2.5 py-2 font-semibold">{h}</th>)}
+              {["Pedido / SKU", "Cliente", "Distrito"].map((h) => <th key={h} className="whitespace-nowrap px-2.5 py-2 font-semibold">{h}</th>)}
               <th className="px-2.5 py-2 text-right font-semibold">Cantidad</th>
               <th className="px-2.5 py-2 text-right font-semibold">Valorizado</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Cargando…</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Cargando…</td></tr>
             ) : error ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-destructive">No pude leer el reporte compartido.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-destructive">No pude leer el reporte compartido.</td></tr>
             ) : !data ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Aún no hay un reporte cargado. Vuelve a revisar en unos minutos.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Aún no hay un reporte cargado. Vuelve a revisar en unos minutos.</td></tr>
             ) : !view.rows.length ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Ningún pedido coincide con los filtros.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Ningún pedido coincide con los filtros.</td></tr>
             ) : view.rows.flatMap(({ g, gv, miss, gq }) => {
               const none = miss === g.ls.length;
               return [
@@ -162,7 +171,6 @@ function Page() {
                   <td className="px-2.5 py-1.5">{g.p}</td>
                   <td className="px-2.5 py-1.5">{g.c}</td>
                   <td className="px-2.5 py-1.5">{g.d}</td>
-                  <td className="px-2.5 py-1.5">{g.a || <span className="text-muted-foreground">Sin asesor</span>}</td>
                   <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">{f0.format(gq)}</td>
                   <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">
                     {none ? <span className="text-muted-foreground">—</span> : "S/ " + f2.format(gv)}
@@ -172,7 +180,7 @@ function Page() {
                 ...(collapsed ? [] : g.ls.map((l, i) => (
                   <tr key={g.p + "-" + i}>
                     <td className="py-1.5 pl-7 pr-2.5 text-muted-foreground">{l.s}</td>
-                    <td /><td /><td />
+                    <td /><td />
                     <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">{f0.format(l.q)}</td>
                     <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">{l.v == null ? <span className="text-muted-foreground">—</span> : "S/ " + f2.format(l.v)}</td>
                   </tr>
