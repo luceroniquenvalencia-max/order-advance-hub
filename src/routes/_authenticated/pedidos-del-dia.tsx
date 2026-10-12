@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getPedidosSheet } from "@/server/pedidos-sheet.functions";
+import { getPedidosSheet } from "@/lib/pedidos-sheet.functions";
 import { useMe } from "@/hooks/useAuth";
 import { group, norm } from "@/lib/pedidos-csv";
 import { ASESORES } from "@/lib/pedidos-xlsx";
