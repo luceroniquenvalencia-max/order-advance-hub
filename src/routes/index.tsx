@@ -23,38 +23,31 @@ export const Route = createFileRoute("/")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [nombre, setNombre] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/pedidos-del-dia" });
     });
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) navigate({ to: "/pedidos-del-dia" });
+    });
+    return () => data.subscription.unsubscribe();
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/pedidos-del-dia" });
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: window.location.origin, data: { nombre } },
-        });
-        if (error) throw error;
-        if (data.session) navigate({ to: "/pedidos-del-dia" });
-        else {
-          toast.success("Revisa tu correo para confirmar tu cuenta.");
-          setMode("login");
-        }
-      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin, shouldCreateUser: true },
+      });
+      if (error) throw error;
+      setSent(true);
+      toast.success("Te enviamos un enlace de acceso a tu correo.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error de acceso");
     } finally {
@@ -82,29 +75,18 @@ function AuthPage() {
       <main className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
           <div>
-            <h2 className="font-display text-2xl font-bold">{mode === "login" ? "Iniciar sesión" : "Crear cuenta"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Usa tu correo corporativo.</p>
+            <h2 className="font-display text-2xl font-bold">Iniciar sesión</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {sent ? "Revisa tu correo y abre el enlace para entrar." : "Ingresa tu correo corporativo y te enviaremos un enlace de acceso."}
+            </p>
           </div>
-          {mode === "signup" && (
-            <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre completo</Label>
-              <Input id="nombre" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="email">Correo</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {mode === "login" ? "Entrar" : "Registrarme"} <ArrowRight className="size-4" />
+            {sent ? "Reenviar enlace" : "Enviar enlace"} <ArrowRight className="size-4" />
           </Button>
-          <button type="button" onClick={() => setMode(mode === "login" ? "signup" : "login")} className="w-full text-center text-sm text-muted-foreground hover:text-foreground">
-            {mode === "login" ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
-          </button>
         </form>
       </main>
     </div>
