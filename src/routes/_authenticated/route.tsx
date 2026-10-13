@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, LogOut, Truck, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/useAuth";
+import logo from "@/assets/logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -33,8 +34,8 @@ function Shell() {
     <div className="min-h-screen md:flex">
       <aside className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-sidebar px-4 py-3 text-sidebar-foreground md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:p-4">
         <div className="flex items-center gap-2 font-display font-bold md:mb-6">
-          <span className="grid size-8 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"><Truck className="size-4" /></span>
-          <span className="hidden sm:inline">Pedidos</span>
+          <img src={logo.url} alt="Grupo EFE" className="h-9 w-auto rounded-md bg-card p-0.5 md:h-auto md:w-full" />
+          
         </div>
         <nav className="flex gap-1 md:flex-col">
           <Link to="/pedidos-del-dia" className={linkCls} activeProps={active}><ClipboardList className="size-4" /><span className="hidden sm:inline">Pedidos del día</span></Link>
