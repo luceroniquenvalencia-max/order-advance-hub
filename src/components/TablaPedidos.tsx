@@ -9,9 +9,9 @@ export const f2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, max
 export type FilaTabla = { g: Grupo; gv: number; miss: number; gq: number; extra?: string; status?: string };
 
 const STATUS_STYLE: Record<string, string> = {
-  "Entregado": "bg-status-delivered/15 text-status-delivered",
-  "En ruta": "bg-primary/10 text-primary",
-  "No entregado": "bg-destructive/10 text-destructive",
+  "Entregado": "bg-status-done-bg text-status-done",
+  "En ruta": "bg-status-review-bg text-status-review",
+  "No entregado": "bg-status-rejected-bg text-status-rejected",
   "Sin estado": "bg-muted text-muted-foreground",
 };
 
