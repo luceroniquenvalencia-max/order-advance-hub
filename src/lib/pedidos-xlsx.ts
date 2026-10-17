@@ -6,7 +6,7 @@ export const ASESORES: Record<string, string> = {
   "rnunezp@efe-lc.com.pe": "Rocio Nuñez", "rportocarrero@lacuracao.com.pe": "Renato Portocarrero", "yrodriguez@efe-lc.com.pe": "Yvan Rodriguez",
   "mcespedes@lacuracao.com.pe": "Maria A. Cespedes", "sinchaustegui@lacuracao.com.pe": "Samantha Inchaustegui", "mcubasr@efe-lc.com.pe": "Irene Cubas",
 };
-const asesorDe = (v: string) => {
+export const asesorDe = (v: string) => {
   const t = v.trim().toLowerCase();
   if (ASESORES[t]) return ASESORES[t]!;
   const u = t.split("@")[0];
