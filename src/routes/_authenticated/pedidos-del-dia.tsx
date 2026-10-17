@@ -10,6 +10,8 @@ import { ubicar } from "@/lib/distritos";
 import { MapaDistritos } from "@/components/MapaDistritos";
 import { cn } from "@/lib/utils";
 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Global45 } from "@/components/Global45";
 export const Route = createFileRoute("/_authenticated/pedidos-del-dia")({
   head: () => ({
     meta: [
@@ -25,7 +27,8 @@ export const Route = createFileRoute("/_authenticated/pedidos-del-dia")({
 const f0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 const f2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function Page() {
+function Page() {      ← antes
+function Programados() {      ← después
   const { data: me } = useMe();
   const qc = useQueryClient();
   const fetchSheet = useServerFn(getPedidosSheet);
@@ -166,5 +169,18 @@ function Page() {
       </div>
       <div role="status" aria-live="polite" className={cn("mt-2.5 min-h-5 text-sm", msg?.err && "text-destructive")}>{msg?.t}</div>
     </div>
+  );
+}
+
+                 function Page() {
+  return (
+    <Tabs defaultValue="programados" className="mx-auto max-w-[1100px]">
+      <TabsList className="mb-4">
+        <TabsTrigger value="programados">PEDIDOS PROGRAMADOS</TabsTrigger>
+        <TabsTrigger value="global">GLOBAL 45 DÍAS</TabsTrigger>
+      </TabsList>
+      <TabsContent value="programados"><Programados /></TabsContent>
+      <TabsContent value="global"><Global45 /></TabsContent>
+    </Tabs>
   );
 }
