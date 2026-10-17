@@ -17,6 +17,15 @@ export const DISTRITOS: Record<string, [number, number]> = {
   "LA PERLA": [-12.0697, -77.1186], "LA PUNTA": [-12.0719, -77.1631], "VENTANILLA": [-11.8747, -77.1292], "MI PERU": [-11.8556, -77.1253],
 };
 
+const CALLAO = new Set(["CALLAO", "BELLAVISTA", "CARMEN DE LA LEGUA", "CARMEN DE LA LEGUA REYNOSO", "LA PERLA", "LA PUNTA", "VENTANILLA", "MI PERU"]);
+export function distritoInfo(nombre: string): { dep: string; prov: string } | null {
+  const n = norm(nombre).replace(/\s+/g, " ");
+  if (!n) return null;
+  const k = DISTRITOS[n] ? n : keys.find((k) => k.startsWith(n) && n.length >= 4) ?? keys.find((k) => n.startsWith(k));
+  if (!k) return null;
+  return CALLAO.has(k) ? { dep: "CALLAO", prov: "CALLAO" } : { dep: "LIMA", prov: "LIMA" };
+}
+
 const keys = Object.keys(DISTRITOS).sort((a, b) => b.length - a.length);
 export function ubicar(nombre: string): [number, number] | null {
   const n = norm(nombre).replace(/\s+/g, " ");
