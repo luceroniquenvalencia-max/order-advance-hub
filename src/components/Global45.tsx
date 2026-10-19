@@ -5,6 +5,7 @@ import { getPedidosBase, getEntregas } from "@/lib/pedidos-sheet.functions";
 import { group, norm } from "@/lib/pedidos-csv";
 import { ASESORES } from "@/lib/pedidos-xlsx";
 import { TablaPedidos, f0, f2, type FilaTabla } from "@/components/TablaPedidos";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const PAGE = 25;
@@ -12,17 +13,17 @@ const sel = "rounded-md border bg-background px-3 py-2 text-sm min-w-[140px]";
 
 function clasifica(s: string): string {
   const n = norm(s);
-  if (!n) return "Sin estado";
+  if (!n) return "Sin status";
   if (n.includes("ENTREG") && !n.includes("NO")) return "Entregado";
   if (n.includes("RUTA") || n.includes("TRANSITO") || n.includes("CAMINO")) return "En ruta";
   if (n.includes("NO") || n.includes("FALLID") || n.includes("RECHAZ") || n.includes("ANULAD")) return "No entregado";
-  return "Sin estado";
+  return "Sin status";
 }
 
 export function Global45() {
   const fetchBase = useServerFn(getPedidosBase);
   const fetchEntregas = useServerFn(getEntregas);
-  const { data, isLoading, error, isFetching, refetch } = useQuery({ queryKey: ["pedidos_base"], queryFn: () => fetchBase(), staleTime: 5 * 60_000 });
+  const { data, isLoading, error, isFetching, refetch } = useQuery({ queryKey: ["pedidos_base"], queryFn: () => fetchBase(), staleTime: 5 * 60_000, retry: false });
   const [fa, setFa] = useState("");
   const [fdep, setFdep] = useState("");
   const [fprov, setFprov] = useState("");
@@ -46,8 +47,8 @@ export function Global45() {
 
   const view = useMemo(() => {
     const nq = norm(q);
-    const dDesde = desde ? new Date(desde + "T00:00:00").getTime() : 0;
-    const dHasta = hasta ? new Date(hasta + "T23:59:59").getTime() : Infinity;
+    const dDesde = desde ? new Date(desde + "T00:00:00Z").getTime() : 0;
+    const dHasta = hasta ? new Date(hasta + "T23:59:59Z").getTime() : Infinity;
     const gs = all.filter((g) => {
       const f = meta.get(g.p);
       if (!f) return false;
@@ -71,11 +72,12 @@ export function Global45() {
 
   // Status solo para los pedidos de la página visible, cacheado 5 min
   const ids = pageRows.map((r) => r.g.p).sort().join(",");
-  const { data: entregas } = useQuery({
+  const { data: entregas, isFetching: loadingStatus } = useQuery({
     queryKey: ["entregas", ids],
     queryFn: () => fetchEntregas({ data: { pedidos: ids ? ids.split(",") : [] } }),
     enabled: !!ids,
     staleTime: 5 * 60_000,
+    retry: false,
   });
   const statusPorPedido = useMemo(() => {
     const m = new Map<string, string>();
@@ -83,7 +85,7 @@ export function Global45() {
     return m;
   }, [entregas]);
 
-  const rowsConStatus = pageRows.map((r) => ({ ...r, status: statusPorPedido.get(r.g.p) ?? "Sin estado" }));
+  const rowsConStatus = pageRows.map((r) => ({ ...r, status: statusPorPedido.get(r.g.p) ?? "Sin status" }));
   const visibles = fstatus ? rowsConStatus.filter((r) => r.status === fstatus) : rowsConStatus;
   const entregados = rowsConStatus.filter((r) => r.status === "Entregado").length;
   const avance = rowsConStatus.length ? (entregados / rowsConStatus.length) * 100 : 0;
@@ -94,15 +96,15 @@ export function Global45() {
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="text-muted-foreground">
-          {data ? "Últimos 45 días · leído " + new Date(data.leido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Cargando base…"}
+          {data ? "Últimos 45 días · leído " + new Date(data.leido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : error ? "No se pudo leer BASE y SKU." : "Cargando base…"}
         </div>
-        <button disabled={isFetching} onClick={() => refetch()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+        <Button disabled={isFetching} onClick={() => refetch()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
           {isFetching ? "Actualizando…" : "Actualizar desde la hoja"}
-        </button>
+        </Button>
       </div>
 
       <section aria-label="Resumen global" className="grid grid-cols-2 overflow-hidden rounded-lg bg-primary text-primary-foreground sm:grid-cols-4">
-        {[[f0.format(view.rows.length), "Pedidos"], ["S/ " + f0.format(view.val), "Valorizado"], [f2.format(view.vol), "M3"], [f0.format(avance) + " %", "Avance de entregas"]].map(([v, l], i) => (
+        {[[f0.format(view.rows.length), "Pedidos"], ["S/ " + f0.format(view.val), "Valorizado"], [f2.format(view.vol), "M3"], [loadingStatus ? "—" : f0.format(avance) + " %", "Entregados (página actual)"]].map(([v, l], i) => (
           <div key={l} className={cn("p-3 sm:px-5 sm:py-4", i > 0 && "border-l border-primary-foreground/30")}>
             <b className="block font-display text-2xl font-bold leading-tight sm:text-3xl">{v}</b>
             <span className="text-xs font-medium opacity-90 sm:text-sm">{l}</span>
@@ -140,21 +142,23 @@ export function Global45() {
         </label>
         <select aria-label="Status" className={sel} value={fstatus} onChange={reset(setFstatus)}>
           <option value="">Todos los status</option>
-          {["Entregado", "En ruta", "No entregado", "Sin estado"].map((s) => <option key={s}>{s}</option>)}
+          {["Entregado", "En ruta", "No entregado", "Sin status"].map((s) => <option key={s}>{s}</option>)}
         </select>
         <input type="search" aria-label="Buscar" placeholder="Buscar por pedido o cliente" value={q} onChange={reset(setQ)} className={cn(sel, "min-w-[180px] flex-1")} />
-        <button onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
+        <Button onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
           {collapsed ? "Expandir SKU" : "Contraer SKU"}
-        </button>
+        </Button>
       </div>
 
-      <TablaPedidos rows={visibles} collapsed={collapsed} isLoading={isLoading} error={error} emptyMsg="Ningún pedido coincide con los filtros." showStatus />
+      {entregas?.error && <p role="status" className="mb-2 text-sm text-status-pending">{entregas.error} Los pedidos siguen disponibles.</p>}
+      {entregas && !entregas.configurado && <p role="status" className="mb-2 text-sm text-muted-foreground">DispatchTrack no está configurado; los pedidos se muestran sin status.</p>}
+      <TablaPedidos rows={visibles} collapsed={collapsed} isLoading={isLoading} error={error} emptyMsg={all.length ? "Ningún pedido coincide con los filtros." : "No hay pedidos en los últimos 45 días por Fecha documento."} showStatus />
 
       {pages > 1 && (
         <div className="mt-3 flex items-center justify-center gap-2 text-sm">
-          <button disabled={cur === 0} onClick={() => setPage(cur - 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Anterior</button>
+          <Button disabled={cur === 0} onClick={() => setPage(cur - 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Anterior</Button>
           <span className="text-muted-foreground">Página {cur + 1} de {pages}</span>
-          <button disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Siguiente</button>
+          <Button disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Siguiente</Button>
         </div>
       )}
     </div>

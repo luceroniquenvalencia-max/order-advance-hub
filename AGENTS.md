@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Global order parsing lives in pedidos-base.ts and is covered by pure regression tests; Sheets columns are resolved from live headers rather than fixed offsets to tolerate reordered data.
