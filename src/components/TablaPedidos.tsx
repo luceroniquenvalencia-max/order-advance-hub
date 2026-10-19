@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import type { Grupo } from "@/lib/pedidos-csv";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const f0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -12,13 +13,15 @@ const STATUS_STYLE: Record<string, string> = {
   "Entregado": "bg-status-done-bg text-status-done",
   "En ruta": "bg-status-review-bg text-status-review",
   "No entregado": "bg-status-rejected-bg text-status-rejected",
-  "Sin estado": "bg-muted text-muted-foreground",
+  "Sin status": "bg-muted text-muted-foreground",
 };
 
 export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, showStatus }: {
   rows: FilaTabla[]; collapsed: boolean; isLoading?: boolean; error?: unknown; emptyMsg: string; showStatus?: boolean;
 }) {
-  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
+  const [state, setState] = useState<{ collapsed: boolean; abiertos: Record<string, boolean> }>({ collapsed, abiertos: {} });
+  const abiertos = state.collapsed === collapsed ? state.abiertos : {};
+  const setAbiertos = (update: (s: Record<string, boolean>) => Record<string, boolean>) => setState({ collapsed, abiertos: update(abiertos) });
   const cols = showStatus ? 6 : 5;
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -54,14 +57,14 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
                 </td>
                 {showStatus && (
                   <td className="px-2.5 py-1.5">
-                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLE[status ?? "Sin estado"])}>{status ?? "Sin estado"}</span>
+                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLE[status ?? "Sin status"])}>{status ?? "Sin status"}</span>
                   </td>
                 )}
                 <td className="px-2 py-1.5 text-center">
-                  <button aria-label={open ? "Ocultar SKU" : "Ver SKU"} onClick={() => setAbiertos((s) => ({ ...s, [g.p]: !open }))}
+                  <Button variant="ghost" size="icon" title={open ? "Ocultar SKU" : "Ver SKU"} aria-label={open ? "Ocultar SKU" : "Ver SKU"} onClick={() => setAbiertos((s) => ({ ...s, [g.p]: !open }))}
                     className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground">
                     {open ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  </Button>
                 </td>
               </tr>,
               ...(open ? g.ls.map((l, i) => (
