@@ -4,7 +4,7 @@ import { group } from "./pedidos-csv";
 
 const now = Date.UTC(2026, 9, 19, 12);
 const headers = [" Nº   DE PEDIDO ", "Fecha documento", " nombre  cliente ", "Distrito receptor", "Cantidad de pedido", "ARTICULO", "E-MAIL"];
-const row = (date: unknown, sku = "ABC", id = "123") => [id, date, "Cliente", "LIMA", "2", sku, "agomezr@lacuracao.com.pe"];
+const row = (date, sku = "ABC", id = "123") => [id, date, "Cliente", "LIMA", "2", sku, "agomezr@lacuracao.com.pe"];
 const sku = buildSkuMap([["Volúmen", "Artículo", " Precio   Bruto "], [0.5, "ABC", "S/ 1,234.50"]]);
 
 describe("BASE global rules", () => {
