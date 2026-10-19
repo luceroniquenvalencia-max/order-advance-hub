@@ -145,7 +145,7 @@ export function Global45() {
           {["Entregado", "En ruta", "No entregado", "Sin status"].map((s) => <option key={s}>{s}</option>)}
         </select>
         <input type="search" aria-label="Buscar" placeholder="Buscar por pedido o cliente" value={q} onChange={reset(setQ)} className={cn(sel, "min-w-[180px] flex-1")} />
-        <Button onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
+        <Button variant="outline" onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
           {collapsed ? "Expandir SKU" : "Contraer SKU"}
         </Button>
       </div>
