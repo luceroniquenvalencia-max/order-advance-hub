@@ -10,6 +10,8 @@ const sku = buildSkuMap([["Volúmen", "Artículo", " Precio   Bruto "], [0.5, "A
 describe("BASE global rules", () => {
   test("removes currency, commas and whitespace from numeric inputs", () => {
     expect(baseNumber(" S/ 1,234.50 ")).toBe(1234.5);
+    expect(baseNumber("1.201,30")).toBe(1201.3);
+    expect(baseNumber("139,20")).toBe(139.2);
     expect(baseNumber("bad")).toBe(0);
   });
   test("matches normalized headers and values quantity times SKU price and volume", () => {

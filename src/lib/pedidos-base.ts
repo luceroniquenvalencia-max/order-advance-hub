@@ -6,7 +6,11 @@ export type BaseFila = Fila & { fecha: string; ts: number; dep: string; prov: st
 export const headerKey = (v: unknown) => norm(v).replace(/\s+/g, " ");
 export const baseNumber = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  const n = Number(String(v ?? "").replace(/S\//gi, "").replace(/[,\s]/g, ""));
+  const raw = String(v ?? "").replace(/S\//gi, "").replace(/\s/g, "");
+  // SKU stores text prices in es-PE (1.201,30), but accepts 1,234.50 too.
+  const decimalComma = /,\d{1,2}$/.test(raw) && raw.lastIndexOf(",") > raw.lastIndexOf(".");
+  const cleaned = decimalComma ? raw.replace(/\./g, "").replace(",", ".") : raw.replace(/,/g, "");
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 };
 export const skuKey = (v: unknown) => headerKey(v).replace(/\.0+$/, "");

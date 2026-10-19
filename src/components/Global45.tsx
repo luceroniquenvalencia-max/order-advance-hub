@@ -104,7 +104,7 @@ export function Global45() {
       </div>
 
       <section aria-label="Resumen global" className="grid grid-cols-2 overflow-hidden rounded-lg bg-primary text-primary-foreground sm:grid-cols-4">
-        {[[f0.format(view.rows.length), "Pedidos"], ["S/ " + f0.format(view.val), "Valorizado"], [f2.format(view.vol), "M3"], [loadingStatus ? "—" : f0.format(avance) + " %", "Entregados (página actual)"]].map(([v, l], i) => (
+        {[[f0.format(view.rows.length), "Pedidos"], ["S/ " + f0.format(view.val), "Valorizado"], [f2.format(view.vol), "M3"], [loadingStatus || !entregas?.configurado || entregas.error ? "—" : f0.format(avance) + " %", "Entregados (página actual)"]].map(([v, l], i) => (
           <div key={l} className={cn("p-3 sm:px-5 sm:py-4", i > 0 && "border-l border-primary-foreground/30")}>
             <b className="block font-display text-2xl font-bold leading-tight sm:text-3xl">{v}</b>
             <span className="text-xs font-medium opacity-90 sm:text-sm">{l}</span>
@@ -145,7 +145,7 @@ export function Global45() {
           {["Entregado", "En ruta", "No entregado", "Sin status"].map((s) => <option key={s}>{s}</option>)}
         </select>
         <input type="search" aria-label="Buscar" placeholder="Buscar por pedido o cliente" value={q} onChange={reset(setQ)} className={cn(sel, "min-w-[180px] flex-1")} />
-        <Button onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
+        <Button variant="outline" onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
           {collapsed ? "Expandir SKU" : "Contraer SKU"}
         </Button>
       </div>
