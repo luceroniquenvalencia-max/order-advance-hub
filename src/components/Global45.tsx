@@ -5,11 +5,14 @@ import { getPedidosBase, getEntregas } from "@/lib/pedidos-sheet.functions";
 import { group, norm } from "@/lib/pedidos-csv";
 import { ASESORES } from "@/lib/pedidos-xlsx";
 import { TablaPedidos, f0, f2, type FilaTabla } from "@/components/TablaPedidos";
+import { Kpi } from "@/components/Kpi";
+import { DonutStatus } from "@/components/DonutStatus";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const PAGE = 25;
-const sel = "rounded-md border bg-background px-3 py-2 text-sm min-w-[140px]";
+const sel = "w-full rounded-md border bg-background px-3 py-2 text-sm";
 
 function clasifica(s: string): string {
   const n = norm(s);
@@ -68,7 +71,7 @@ export function Global45() {
 
   const pages = Math.max(1, Math.ceil(view.rows.length / PAGE));
   const cur = Math.min(page, pages - 1);
-  const pageRows = view.rows.slice(cur * PAGE, cur * PAGE + 25);
+  const pageRows = view.rows.slice(cur * PAGE, cur * PAGE + PAGE);
 
   // Status solo para los pedidos de la página visible, cacheado 5 min
   const ids = pageRows.map((r) => r.g.p).sort().join(",");
@@ -90,37 +93,54 @@ export function Global45() {
   const entregados = rowsConStatus.filter((r) => r.status === "Entregado").length;
   const avance = rowsConStatus.length ? (entregados / rowsConStatus.length) * 100 : 0;
 
+  const conteoStatus = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const r of rowsConStatus) c[r.status] = (c[r.status] ?? 0) + 1;
+    return c;
+  }, [rowsConStatus]);
+  const porDistrito = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of view.rows) if (r.g.d) m.set(r.g.d, (m.get(r.g.d) ?? 0) + 1);
+    return [...m].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [view.rows]);
+  const maxD = porDistrito[0]?.[1] ?? 1;
+  const statusOk = !loadingStatus && !!entregas?.configurado && !entregas.error;
+
   const reset = (fn: (v: string) => void) => (e: { target: { value: string } }) => { fn(e.target.value); setPage(0); };
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="text-muted-foreground">
-          {data ? "Últimos 45 días · leído " + new Date(data.leido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : error ? "No se pudo leer BASE y SKU." : "Cargando base…"}
-        </div>
-        <Button disabled={isFetching} onClick={() => refetch()} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-          {isFetching ? "Actualizando…" : "Actualizar desde la hoja"}
-        </Button>
-      </div>
-
-      <section aria-label="Resumen global" className="grid grid-cols-2 overflow-hidden rounded-lg bg-primary text-primary-foreground sm:grid-cols-4">
-        {[[f0.format(view.rows.length), "Pedidos"], ["S/ " + f0.format(view.val), "Valorizado"], [f2.format(view.vol), "M3"], [loadingStatus || !entregas?.configurado || entregas.error ? "—" : f0.format(avance) + " %", "Entregados (página actual)"]].map(([v, l], i) => (
-          <div key={l} className={cn("p-3 sm:px-5 sm:py-4", i > 0 && "border-l border-primary-foreground/30")}>
-            <b className="block font-display text-2xl font-bold leading-tight sm:text-3xl">{v}</b>
-            <span className="text-xs font-medium opacity-90 sm:text-sm">{l}</span>
+    <div className="mx-auto max-w-[1200px] space-y-4">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold leading-tight">Global 45 días</h1>
+          <div className="mt-1 text-sm text-muted-foreground">
+            {data ? "Últimos 45 días · leído " + new Date(data.leido).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : error ? "No se pudo leer BASE y SKU." : "Cargando base…"}
           </div>
-        ))}
+        </div>
+        <Button disabled={isFetching} onClick={() => refetch()}>
+          <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />{isFetching ? "Actualizando…" : "Actualizar"}
+        </Button>
+      </header>
+
+      <section aria-label="Resumen global" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi label="Pedidos" value={f0.format(view.rows.length)} />
+        <Kpi label="Valorizado" value={"S/ " + f0.format(view.val)} />
+        <Kpi label="M3" value={f2.format(view.vol)} />
+        <Kpi label="Entregados (página actual)" value={statusOk ? f0.format(avance) + " %" : "—"} progress={statusOk ? avance : null} />
       </section>
       {view.sinVal > 0 && (
-        <p className="mx-0.5 mt-2 text-sm text-status-pending">
-          {view.sinVal} de {view.lineas} líneas no tienen precio en la hoja SKU; el total puede estar subestimado.
-        </p>
+        <p className="text-sm text-status-pending">{view.sinVal} de {view.lineas} líneas no tienen precio en la hoja SKU; el total puede estar subestimado.</p>
       )}
 
-      <div className="mb-2.5 mt-4 flex flex-wrap gap-2">
+      <section aria-label="Filtros" className="grid gap-2 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <input type="search" aria-label="Buscar" placeholder="Buscar por pedido o cliente" value={q} onChange={reset(setQ)} className={cn(sel, "sm:col-span-2")} />
         <select aria-label="Asesor" className={sel} value={fa} onChange={reset(setFa)}>
           <option value="">Todos los asesores</option>
           {Object.values(ASESORES).map((a) => <option key={a}>{a}</option>)}
+        </select>
+        <select aria-label="Status" className={sel} value={fstatus} onChange={reset(setFstatus)}>
+          <option value="">Todos los status</option>
+          {["Entregado", "En ruta", "No entregado", "Sin status"].map((s) => <option key={s}>{s}</option>)}
         </select>
         <select aria-label="Departamento" className={sel} value={fdep} onChange={(e) => { reset(setFdep)(e); setFprov(""); setFd(""); }}>
           <option value="">Departamento</option>
@@ -134,31 +154,48 @@ export function Global45() {
           <option value="">Distrito</option>
           {distritos.map((d) => <option key={d}>{d}</option>)}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          Desde <input type="date" className={cn(sel, "min-w-0")} value={desde} onChange={reset(setDesde)} />
-        </label>
-        <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          Hasta <input type="date" className={cn(sel, "min-w-0")} value={hasta} onChange={reset(setHasta)} />
-        </label>
-        <select aria-label="Status" className={sel} value={fstatus} onChange={reset(setFstatus)}>
-          <option value="">Todos los status</option>
-          {["Entregado", "En ruta", "No entregado", "Sin status"].map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <input type="search" aria-label="Buscar" placeholder="Buscar por pedido o cliente" value={q} onChange={reset(setQ)} className={cn(sel, "min-w-[180px] flex-1")} />
-        <Button variant="outline" onClick={() => setCollapsed(!collapsed)} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary">
-          {collapsed ? "Expandir SKU" : "Contraer SKU"}
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" aria-label="Desde" title="Desde" className={sel} value={desde} onChange={reset(setDesde)} />
+          <input type="date" aria-label="Hasta" title="Hasta" className={sel} value={hasta} onChange={reset(setHasta)} />
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section aria-label="Status" className="rounded-xl border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold">Pedidos por status <span className="font-normal text-muted-foreground">(página actual)</span></h2>
+          <DonutStatus counts={conteoStatus} active={fstatus} onSelect={(s) => { setFstatus(s); setPage(0); }} />
+        </section>
+        <section aria-label="Distritos" className="rounded-xl border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold">Top distritos</h2>
+          <ul className="space-y-1.5">
+            {porDistrito.map(([d, n]) => (
+              <li key={d}>
+                <button onClick={() => { setFd(fd === d ? "" : d); setPage(0); }} className="flex w-full items-center gap-2 text-left text-sm">
+                  <span className={cn("w-32 shrink-0 truncate", fd === d && "font-semibold")}>{d}</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${(n / maxD) * 100}%` }} /></span>
+                  <b className="w-8 text-right tabular-nums">{n}</b>
+                </button>
+              </li>
+            ))}
+            {!porDistrito.length && <li className="text-sm text-muted-foreground">Sin datos.</li>}
+          </ul>
+        </section>
       </div>
 
-      {entregas?.error && <p role="status" className="mb-2 text-sm text-status-pending">{entregas.error} Los pedidos siguen disponibles.</p>}
-      {entregas && !entregas.configurado && <p role="status" className="mb-2 text-sm text-muted-foreground">DispatchTrack no está configurado; los pedidos se muestran sin status.</p>}
+      {entregas?.error && <p role="status" className="text-sm text-status-pending">{entregas.error} Los pedidos siguen disponibles.</p>}
+      {entregas && !entregas.configurado && <p role="status" className="text-sm text-muted-foreground">DispatchTrack no está configurado; los pedidos se muestran sin status.</p>}
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Pedidos</h2>
+        <Button variant="outline" size="sm" onClick={() => setCollapsed(!collapsed)}>{collapsed ? "Expandir SKU" : "Contraer SKU"}</Button>
+      </div>
       <TablaPedidos rows={visibles} collapsed={collapsed} isLoading={isLoading} error={error} emptyMsg={all.length ? "Ningún pedido coincide con los filtros." : "No hay pedidos en los últimos 45 días por Fecha documento."} showStatus />
 
       {pages > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm">
-          <Button disabled={cur === 0} onClick={() => setPage(cur - 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Anterior</Button>
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <Button variant="outline" size="sm" disabled={cur === 0} onClick={() => setPage(cur - 1)}>Anterior</Button>
           <span className="text-muted-foreground">Página {cur + 1} de {pages}</span>
-          <Button disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-50">Siguiente</Button>
+          <Button variant="outline" size="sm" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>Siguiente</Button>
         </div>
       )}
     </div>

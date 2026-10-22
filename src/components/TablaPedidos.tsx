@@ -24,10 +24,10 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
   const setAbiertos = (update: (s: Record<string, boolean>) => Record<string, boolean>) => setState({ collapsed, abiertos: update(abiertos) });
   const cols = showStatus ? 6 : 5;
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
-          <tr className="bg-primary text-left text-primary-foreground">
+          <tr className="bg-muted text-left text-muted-foreground">
             {["Pedido / SKU", "Cliente", "Distrito"].map((h) => <th key={h} className="whitespace-nowrap px-2.5 py-2 font-semibold">{h}</th>)}
             <th className="px-2.5 py-2 text-right font-semibold">Cantidad</th>
             <th className="px-2.5 py-2 text-right font-semibold">Valorizado</th>
@@ -46,7 +46,7 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
             const none = miss === g.ls.length;
             const open = abiertos[g.p] ?? !collapsed;
             return [
-              <tr key={g.p} className="border-t bg-accent font-semibold">
+              <tr key={g.p} className="border-t bg-muted/40 font-semibold">
                 <td className="px-2.5 py-1.5">{g.p}</td>
                 <td className="px-2.5 py-1.5">{g.c}{extra && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{extra}</span>}</td>
                 <td className="px-2.5 py-1.5">{g.d}</td>

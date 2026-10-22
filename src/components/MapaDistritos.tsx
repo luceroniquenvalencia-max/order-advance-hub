@@ -42,5 +42,5 @@ export function MapaDistritos({ conteo, activo, onSelect }: Props) {
 
   useEffect(() => () => { map.current?.remove(); map.current = null; }, []);
 
-  return <div ref={el} className="h-[340px] w-full rounded-lg border" />;
+  return <div ref={el} className="h-[260px] w-full rounded-xl border" />;
 }
