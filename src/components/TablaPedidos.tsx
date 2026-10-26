@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Truck } from "lucide-react";
 import type { Grupo } from "@/lib/pedidos-csv";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import TrackingModal from "@/components/TrackingModal";
 
 export const f0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 export const f2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -20,6 +21,7 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
   rows: FilaTabla[]; collapsed: boolean; isLoading?: boolean; error?: unknown; emptyMsg: string; showStatus?: boolean;
 }) {
   const [state, setState] = useState<{ collapsed: boolean; abiertos: Record<string, boolean> }>({ collapsed, abiertos: {} });
+  const [verPedido, setVerPedido] = useState<string | null>(null);
   const abiertos = state.collapsed === collapsed ? state.abiertos : {};
   const setAbiertos = (update: (s: Record<string, boolean>) => Record<string, boolean>) => setState({ collapsed, abiertos: update(abiertos) });
   const cols = showStatus ? 6 : 5;
@@ -33,15 +35,16 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
             <th className="px-2.5 py-2 text-right font-semibold">Valorizado</th>
             {showStatus && <th className="px-2.5 py-2 font-semibold">Status</th>}
             <th className="w-10 px-2 py-2" aria-label="Ver SKU" />
+            <th className="w-10 px-2 py-2" aria-label="Seguimiento" />
           </tr>
         </thead>
         <tbody>
           {isLoading ? (
-            <tr><td colSpan={cols + 1} className="px-4 py-10 text-center text-muted-foreground">Cargando…</td></tr>
+            <tr><td colSpan={cols + 2} className="px-4 py-10 text-center text-muted-foreground">Cargando…</td></tr>
           ) : error ? (
-            <tr><td colSpan={cols + 1} className="px-4 py-10 text-center text-destructive">{error instanceof Error ? error.message : "No pude leer los datos."}</td></tr>
+            <tr><td colSpan={cols + 2} className="px-4 py-10 text-center text-destructive">{error instanceof Error ? error.message : "No pude leer los datos."}</td></tr>
           ) : !rows.length ? (
-            <tr><td colSpan={cols + 1} className="px-4 py-10 text-center text-muted-foreground">{emptyMsg}</td></tr>
+            <tr><td colSpan={cols + 2} className="px-4 py-10 text-center text-muted-foreground">{emptyMsg}</td></tr>
           ) : rows.flatMap(({ g, gv, miss, gq, extra, status }) => {
             const none = miss === g.ls.length;
             const open = abiertos[g.p] ?? !collapsed;
@@ -66,6 +69,12 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
                     {open ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </td>
+                <td className="px-2 py-1.5 text-center">
+                  <Button variant="ghost" size="icon" title="Ver seguimiento" aria-label="Ver seguimiento" onClick={() => setVerPedido(g.p)}
+                    className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground">
+                    <Truck className="h-4 w-4" />
+                  </Button>
+                </td>
               </tr>,
               ...(open ? g.ls.map((l, i) => (
                 <tr key={g.p + "-" + i}>
@@ -74,13 +83,14 @@ export function TablaPedidos({ rows, collapsed, isLoading, error, emptyMsg, show
                   <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">{f0.format(l.q)}</td>
                   <td className="whitespace-nowrap px-2.5 py-1.5 text-right tabular-nums">{l.v == null ? <span className="text-muted-foreground">—</span> : "S/ " + f2.format(l.v)}</td>
                   {showStatus && <td />}
-                  <td />
+                  <td /><td />
                 </tr>
               )) : []),
             ];
           })}
         </tbody>
       </table>
+      {verPedido && <TrackingModal pedido={verPedido} onClose={() => setVerPedido(null)} />}
     </div>
   );
 }
