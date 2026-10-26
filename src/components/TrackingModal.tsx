@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 // Widget de DispatchTrack (Beetrack) de tu cuenta
-const WIDGET_URL = "https://script.google.com/macros/s/AKfycbzSw9Slv31PtZ4hyYGnypFtg7O-4jQeVZreG1TFRJt-EGn8-iB-AzuCoV_bwG1ikYpLQA/exec";
+const WIDGET_URL = 'https://grupoefe.dispatchtrack.com/widget/4oclZ97JoHo6YzAFfhI37g';
 
 export default function TrackingModal({ pedido, onClose }: { pedido: string; onClose: () => void }) {
   const [copiado, setCopiado] = useState(false);
